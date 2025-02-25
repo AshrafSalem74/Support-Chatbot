@@ -3,7 +3,7 @@ import os
 from mistralai import Mistral, UserMessage
 
 # Set API key
-os.environ["MISTRAL_API_KEY"] = "your_api_key_here"  # Replace with your actual API key
+os.environ["MISTRAL_API_KEY"] = "tlcYsUNSS1iVHZ6lWnUw8KKW2f8AoVJf"  # Replace with your actual API key
 api_key = os.getenv("MISTRAL_API_KEY")
 
 # Initialize Mistral client

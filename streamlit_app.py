@@ -1,6 +1,6 @@
 import streamlit as st
-import os
 from mistralai import Mistral, UserMessage
+import os
 
 # Set API key
 os.environ["MISTRAL_API_KEY"] = "tlcYsUNSS1iVHZ6lWnUw8KKW2f8AoVJf"  # Replace with your actual API key
@@ -14,60 +14,63 @@ def mistral(user_message, model="mistral-large-latest"):
     return chat_response.choices[0].message.content
 
 # Streamlit UI
-st.title("Mistral AI Chatbot")
-st.write("Interact with Mistral AI for text processing tasks.")
+st.title("🤖 Mistral AI Chatbot")
 
-# User input
-query = st.text_area("Enter your query:")
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# Select task
-option = st.selectbox(
-    "Select a task:",
-    [
-        "General Chatbot",
-        "Classify Bank Inquiry",
-        "Extract Medical Data",
-        "Generate Mortgage Email Response",
-        "Analyze Newsletter",
-    ]
-)
+# Sidebar for task selection
+with st.sidebar:
+    st.header("Configuration")
+    task = st.selectbox(
+        "Select Task:",
+        [
+            "General Chatbot",
+            "Classify Bank Inquiry",
+            "Extract Medical Data",
+            "Generate Mortgage Email Response",
+            "Analyze Newsletter",
+        ],
+        index=0,
+    )
 
-# Define prompts based on selected task
-if option == "Classify Bank Inquiry":
-    prompt = f"""
-    You are a bank customer service bot.
-    Categorize the following inquiry into one of these categories:
-    card arrival, change pin, exchange rate, country support,
-    cancel transfer, charge dispute, or customer service.
-    Inquiry: {query}
-    Category:
-    """
-elif option == "Extract Medical Data":
-    prompt = f"""
-    Extract information from the following medical notes:
-    {query}
-    Return JSON format with this schema:
-    {{"age": int, "gender": str, "diagnosis": str, "weight": int, "smoking": str}}
-    """
-elif option == "Generate Mortgage Email Response":
-    prompt = f"""
-    You are a mortgage lender bot. Generate a personalized response
-    to the customer's email using provided mortgage facts.
-    Email:
-    {query}
-    """
-elif option == "Analyze Newsletter":
-    prompt = f"""
-    Summarize and analyze the following newsletter. Generate key
-    questions and provide insights.
-    Newsletter:
-    {query}
-    """
-else:
-    prompt = query  # General chatbot mode
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# Process query
-if st.button("Submit"):
-    response = mistral(prompt)
-    st.write("### Response:")
-    st.write(response)
+# Chat input
+if prompt := st.chat_input("Type your message..."):
+    # Add user message to history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # Construct task-specific prompt
+    if task == "Classify Bank Inquiry":
+        system_prompt = f"""You are a bank customer service bot. Categorize this inquiry:
+        Categories: card arrival, change pin, exchange rate, country support,
+        cancel transfer, charge dispute, or customer service.
+        Inquiry: {prompt}
+        Category:"""
+    elif task == "Extract Medical Data":
+        system_prompt = f"""Extract medical information as JSON:
+        {prompt}
+        Use schema: {{"age": int, "gender": str, "diagnosis": str, "weight": int, "smoking": str}}"""
+    elif task == "Generate Mortgage Email Response":
+        system_prompt = f"""As a mortgage lender bot, generate response:
+        Email: {prompt}"""
+    elif task == "Analyze Newsletter":
+        system_prompt = f"""Analyze newsletter and provide insights:
+        {prompt}"""
+    else:
+        system_prompt = prompt
+
+    # Get AI response
+    with st.spinner("Processing..."):
+        response = mistral(system_prompt)
+    
+    # Add assistant response to history
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    
+    # Rerun to display new messages
+    st.rerun()
